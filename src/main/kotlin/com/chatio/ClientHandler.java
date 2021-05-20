@@ -22,7 +22,13 @@ public class ClientHandler {
     private static final String HOST = "localhost";
     private static final int PORT = 3443;
 
+    private String openKey;
+
     private static int clientsCount = 0;
+
+    public String getOpenKey() {
+        return openKey;
+    }
 
     public ClientHandler(Socket socket, Server server) {
         try {
@@ -34,51 +40,75 @@ public class ClientHandler {
             this.outMessage = new PrintWriter(socket.getOutputStream());
             this.inMessage = new Scanner(socket.getInputStream());
 
-
-
             new Thread(() -> {
                 try {
                     while (true) {
-                        String str = inMessage.nextLine();
-//                        System.out.println(str);
-                        if (str.startsWith("/auth")) {
-                            String[] tokens = str.split("\\s");
-                            //todo если нужно сто-то  для подписти
-                            if (tokens.length == 2) {
-                                System.out.println("Check nickname for uniq.");
-                                if (server.isUniqNick(tokens[1])) {
-                                    nickname = tokens[1];
-                                    System.out.println("[INFO] Успешная авторизация: " + nickname + "; " + socket);
-                                    sendMsg("ok");
-                                    break;
-                                } else {
-                                    System.out.println("пользователь с таким именем уже есть");
-                                    sendMsg("пользователь с таким именем уже есть");
-                                }
-                            } else {
-                                System.out.println("неверный набор токенов");
-                                sendMsg("неверный набор токенов");
-                                //todo
-                            }
+                        if(inMessage.hasNext()) {
+                            String str = inMessage.nextLine();
 
+                            if (str.startsWith("/auth")) {
+                                String[] tokens = str.split("\\s");
+                                //todo если нужно сто-то  для подписти
+                                if (tokens.length == 2) {
+                                    System.out.println("[INFO] Check nickname for uniq.");
+                                    sendMsg("[INFO] Check \"" + tokens[1] + "\" nickname for uniqueness...");
+                                    if (server.isUniqNick(tokens[1])) {
+                                        nickname = tokens[1];
+                                        System.out.println("[INFO] Successful connection: " + nickname);
+                                        sendMsg("/status ok");
+                                        break;
+                                    } else {
+                                        System.out.println("пользователь с таким именем уже есть");
+                                        sendMsg("/status no");
+                                    }
+                                } else {
+                                    System.out.println("неверный набор токенов");
+                                    sendMsg("неверный набор токенов");
+                                    //todo
+                                }
+
+                            }
                         }
                     }
                     while (true) {
-                        String str = inMessage.nextLine();
-                        if (str.startsWith("/authok")) {
-                            server.subscribe(this);
-                            sendMsg("вы вошли в чат");
-                            System.out.println("[INFO] new client connection: ");
-                        }
-                        //todo проверка валидна везде
-                        if (!str.startsWith("/")) {
-                            System.out.println("не правильный индекс");
-                            sendMsg("не правильный индекс");
-                        } else {
-                            if(str.startsWith("/msg")){
+                        if (inMessage.hasNext()) {
+                            String str = inMessage.nextLine();
+                            if (str.startsWith("/start")) {
                                 String[] tokens = str.split("\\s");
-                                server.sendBroadcastMsg(nickname + ": " + tokens[1]);
-                                System.out.println(nickname + "отправил всем сообщение: " + tokens[1]);
+                                openKey = tokens[1];
+                                server.subscribe(this);
+                                System.out.println("[INFO] new client connection: " + nickname + "  openKey: " + openKey);
+                                server.sendClientList();
+                                break;
+                            } else {
+                                System.out.println(str);
+                            }
+                            //todo проверка валидна везде
+//                        if (!str.startsWith("/")) {
+//                            System.out.println("не правильный индекс");
+//                            sendMsg("не правильный индекс");
+//                        } else {
+//                            if(str.startsWith("/msg")){
+//                                String[] tokens = str.split("\\s");
+//                                server.sendBroadcastMsg(nickname + ": " + tokens[1]);
+//                                System.out.println(nickname + "отправил всем сообщение: " + tokens[1]);
+//                            }
+//                        }
+                        }
+                    }
+                    while (true){
+                        if(inMessage.hasNext()){
+                            String str = inMessage.nextLine();
+                            String[] tokens = str.split("\\s");
+                            if(str.startsWith("/getKey")){
+                                String key = server.getOpenKey(tokens[1]);
+                                sendMsg("/key " + tokens[1] + " " + key);
+                            }
+                            if(str.startsWith("/clientsList")){
+                                server.sendClientList();
+                            }
+                            if(str.startsWith("/msg")){
+                                server.sentPrivateMsg(this, tokens[1], tokens[2]);
                             }
                         }
                     }

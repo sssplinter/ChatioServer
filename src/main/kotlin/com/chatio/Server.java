@@ -17,7 +17,7 @@ public class Server {
     public Server() {
         clients = new ArrayList<ClientHandler>();
         clientsMap = new HashMap<String, ClientHandler>();
-        clientsMap.put("kr", null);
+//        clientsMap.put("kr", null);
 
         Socket clientSocket = null;
         ServerSocket serverSocket = null;
@@ -88,13 +88,17 @@ public class Server {
     public void sentPrivateMsg(ClientHandler sender, String recipientName, String msg){
         ClientHandler recipient = findClient(recipientName);
         if(recipient != null){
-            recipient.sendMsg("from " + sender.getNickname() + ": " + msg);
-            sender.sendMsg("to " + sender.getNickname() + ": " + msg);
+            recipient.sendMsg("/msg " + sender.getNickname() + ": " + msg);
+            sender.sendMsg("/msg " + sender.getNickname() + ": " + msg);
         } else{
             //todo /warning?
             //todo отправление будет по щелчку по клиенту или по вводу никнейма
             sender.sendMsg("/log " + "There is no any client with name " + recipientName + " int this chat.");
         }
+    }
+
+    public String getOpenKey(final String nickName){
+       return findClient(nickName).getOpenKey();
     }
 
     public ClientHandler findClient(String clientName){
@@ -108,6 +112,17 @@ public class Server {
 
     public void removeClient(ClientHandler client) {
         clients.remove(client);
+        //todo  проверка на есть ли такой вообще
         clientsMap.remove(client);
+    }
+
+    public void sendClientList(){
+        StringBuilder builder = new StringBuilder();
+        builder.append("/clientsList ");
+        for(Map.Entry<String, ClientHandler> client: clientsMap.entrySet()){
+            builder.append(client.getKey() + " ");
+        }
+        builder.setLength(builder.length() - 1);
+        sendBroadcastMsg(builder.toString());
     }
 }
