@@ -17,7 +17,7 @@ public class Server {
     public Server() {
         clients = new ArrayList<ClientHandler>();
         clientsMap = new HashMap<String, ClientHandler>();
-//        clientsMap.put("kr", null);
+        clientsMap.put("kr", null);
 
         Socket clientSocket = null;
         ServerSocket serverSocket = null;
@@ -52,10 +52,10 @@ public class Server {
 
     public void  subscribe(ClientHandler client){
         if(!(client == null)){
-            sendBroadcastMsg("/log " + client.getNickname() + " connected to the chat.");
+            //sendBroadcastMsg("/log " + client.getNickname() + " connected to the chat.");
             clientsMap.put(client.getNickname(), client);
             clients.add(client);
-            client.sendMsg("/log " + client.getNickname() + ", welcome!");
+            //client.sendMsg("/log " + client.getNickname() + ", welcome!");
         }
         //todo refresh people online list
     }
